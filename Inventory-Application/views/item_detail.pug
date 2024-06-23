@@ -1,0 +1,25 @@
+extends layout
+
+block content
+
+  h1= title 
+
+  div(style='margin-left:20px;margin-top:20px')
+
+    if item
+      dl
+        dt
+          dd #{item.description}
+          dd Brand: 
+            a(href=item.brand.url) #{item.brand.name}
+          dd Price: #{item.price} 
+          dd Amount in Stock: #{item.numInStock}
+          dd Category: 
+            a(href=item.category.url) #{item.category.name}
+    else
+      p This item does not exist.
+    hr
+    p
+      a(href=item.url+'/delete') Delete Item
+    p
+      a(href=item.url+'/update') Update Item

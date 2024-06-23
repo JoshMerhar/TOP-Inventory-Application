@@ -1,0 +1,13 @@
+extends layout 
+
+block content 
+  h1= title 
+
+  if brand_list.length
+    ul 
+      each brand in brand_list
+        li 
+          a(href=brand.url) #{brand.name}
+
+  else 
+    p There are no brands.

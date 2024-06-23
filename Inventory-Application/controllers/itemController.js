@@ -6,9 +6,9 @@ const asyncHandler = require("express-async-handler");
 exports.index = asyncHandler(async (req, res, next) => {
     // Get details of items, categories, and brand counts (in parallel)
     const [
-      numItems,
-      numCategories,
-      numBrands,
+      itemCount,
+      categoryCount,
+      brandCount,
     ] = await Promise.all([
       Item.countDocuments({}).exec(),
       Category.countDocuments({}).exec(),
@@ -17,20 +17,36 @@ exports.index = asyncHandler(async (req, res, next) => {
   
     res.render("index", {
       title: "Micro Drum Shop",
-      item_count: numItems,
-      category_count: numCategories,
-      brand_count: numBrands,
+      item_count: itemCount,
+      category_count: categoryCount,
+      brand_count: brandCount,
     });
   });
 
 // Display list of all Items.
 exports.item_list = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item list");
+  const allItems = await Item.find().sort({ name: 1 }).populate("brand").exec();
+  res.render("item_list", {
+    title: "Item List",
+    item_list: allItems,
+  });
 });
 
 // Display detail page for a specific Item.
 exports.item_detail = asyncHandler(async (req, res, next) => {
-  res.send(`NOT IMPLEMENTED: Item detail: ${req.params.id}`);
+  const item = await Item.findById(req.params.id).populate("brand").populate("category").exec();
+
+  if (item === null) {
+    // No results.
+    const err = new Error("Item not found");
+    err.status = 404;
+    return next(err);
+  }
+
+  res.render("item_detail", {
+    title: item.name,
+    item: item,
+  });
 });
 
 // Display Item create form on GET.

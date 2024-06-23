@@ -1,0 +1,24 @@
+extends layout
+
+block content
+
+  h1 Brand: #{brand.name}
+
+  div(style='margin-left:20px;margin-top:20px')
+
+    h2(style='font-size: 1.5rem;') Items
+    if brand_items.length
+      dl
+        each item in brand_items
+          dt
+            a(href=item.url) #{item.name}
+          dd #{item.description}
+          dd Category: 
+            a(href=item.category.url) #{item.category.name}
+    else
+      p This brand has no items.
+    hr
+    p
+      a(href=brand.url+'/delete') Delete Brand
+    p
+      a(href=brand.url+'/update') Update Brand

@@ -1,14 +1,34 @@
 const Brand = require("../models/brand");
+const Item = require("../models/item");
 const asyncHandler = require("express-async-handler");
 
 // Display list of all Brands.
 exports.brand_list = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Brand list");
+  const allBrands = await Brand.find().sort({ name: 1 }).exec();
+  res.render("brand_list", {
+    title: "Brand List",
+    brand_list: allBrands,
+  });
 });
 
-// Display detail page for a specific Brand.
+// Display each item from a specific Brand.
 exports.brand_detail = asyncHandler(async (req, res, next) => {
-  res.send(`NOT IMPLEMENTED: Brand detail: ${req.params.id}`);
+  const [brand, itemsInBrand] = await Promise.all([
+    Brand.findById(req.params.id).exec(),
+    Item.find({ brand: req.params.id }, "name description category").populate("category").exec(),
+  ]);
+  if (brand === null) {
+    // No results.
+    const err = new Error("Brand not found");
+    err.status = 404;
+    return next(err);
+  }
+
+  res.render("brand_detail", {
+    title: "Brand Detail",
+    brand: brand,
+    brand_items: itemsInBrand,
+  });
 });
 
 // Display Brand create form on GET.
