@@ -6,7 +6,7 @@ block content
 
   div(style='margin-left:20px;margin-top:20px')
 
-    h2(style='font-size: 1.5rem;') Categories
+    h2(style='font-size: 1.5rem;') #{category.description}
     if category_items.length
       dl
         each item in category_items
