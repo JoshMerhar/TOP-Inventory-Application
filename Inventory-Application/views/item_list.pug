@@ -10,7 +10,8 @@ block content
           a(href=item.url) #{item.name} 
           span From: 
           a(href=item.brand.url) #{item.brand.name} 
-          span Price: $#{item.price}
+          div Price: $#{item.price}
+          hr
 
   else 
     p There are no items.

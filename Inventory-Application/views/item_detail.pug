@@ -14,6 +14,8 @@ block content
             a(href=item.brand.url) #{item.brand.name}
           dd Price: $#{item.price} 
           dd Amount in Stock: #{item.numInStock}
+          dd 
+            img.item-photo(src=(item.itemPhoto))
           dd Category: 
             a(href=item.category.url) #{item.category.name}
     else

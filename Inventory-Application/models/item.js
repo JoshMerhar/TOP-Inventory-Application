@@ -30,7 +30,10 @@ const ItemSchema = new Schema({
     numInStock: {
         type: Number,
         required: true
-    }
+    },
+    itemPhoto: {
+        type: String,
+    },
 });
 
 ItemSchema.virtual('url').get(function() {

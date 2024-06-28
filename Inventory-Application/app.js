@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const multer = require('multer');
 
 const indexRouter = require('./routes/index');
 const inventoryRouter = require('./routes/inventory');
@@ -20,7 +21,6 @@ async function main() {
   await mongoose.connect(mongoDB);
 }
 
-
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
@@ -37,6 +37,17 @@ app.use('/inventory', inventoryRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
+});
+
+// Error handling middleware for multer
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // A multer error occurred when uploading.
+    console.error('Multer error:', err);
+    res.status(500).send('Multer error occurred.');
+  } else {
+    next(err);  // Pass error to next middleware or error handler
+  }
 });
 
 // error handler

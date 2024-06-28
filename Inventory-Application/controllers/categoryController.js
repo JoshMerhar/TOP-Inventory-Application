@@ -31,8 +31,6 @@ exports.category_detail = asyncHandler(async (req, res, next) => {
     category: category,
     category_items: itemsInCategory,
   });
-
-  res.send(`NOT IMPLEMENTED: Category detail: ${req.params.id}`);
 });
 
 // Display Category create form on GET.

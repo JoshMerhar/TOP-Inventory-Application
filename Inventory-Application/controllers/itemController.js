@@ -1,8 +1,32 @@
 const Item = require('../models/item');
 const Category = require('../models/category');
 const Brand = require('../models/brand');
-const asyncHandler = require("express-async-handler");
-const { body, validationResult } = require("express-validator");
+const asyncHandler = require('express-async-handler');
+const { body, validationResult } = require('express-validator');
+const path = require('path');
+const fs = require('fs');
+
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, './public/images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+
+function deleteImage(filePath) {
+  // Construct the full path to the image file
+  const fullPath = 'public' + filePath;
+  // Check if the file exists
+  if (fs.existsSync(fullPath) && !filePath.includes("no-image.")) {
+    // File exists, delete it
+    fs.unlinkSync(fullPath);
+  }
+}
 
 exports.index = asyncHandler(async (req, res, next) => {
     // Get details of items, categories, and brand counts (in parallel)
@@ -65,6 +89,8 @@ exports.item_create_get = asyncHandler(async (req, res, next) => {
 
 // Handle Item create on POST.
 exports.item_create_post = [
+  upload.single('itemPhoto'),
+
   body("name", "Name must be at least 3 characters.")
     .trim()
     .isLength({ min: 3 })
@@ -95,6 +121,9 @@ exports.item_create_post = [
     // Extract the validation errors from a request.
     const errors = validationResult(req);
 
+    console.log(req.file);
+    const imageURL = req.file ? req.file.path.replace(/^public/, '') : '/images/no-image.png';
+
     // Create an Item object with escaped and trimmed data.
     const item = new Item({
       name: req.body.name,
@@ -103,6 +132,7 @@ exports.item_create_post = [
       description: req.body.description,
       price: req.body.price,
       numInStock: req.body.numInStock,
+      itemPhoto: imageURL,
     });
 
     if (!errors.isEmpty()) {
@@ -122,7 +152,7 @@ exports.item_create_post = [
         errors: errors.array(),
       });
     } else {
-      // Data from form is valid. Save book.
+      // Data from form is valid. Save item.
       await item.save();
       res.redirect(item.url);
     }
@@ -141,6 +171,8 @@ exports.item_delete_get = asyncHandler(async (req, res, next) => {
 
 // Handle Item delete on POST.
 exports.item_delete_post = asyncHandler(async (req, res, next) => {
+  const item = await Item.findById(req.body.itemid).exec();
+  deleteImage(item.itemPhoto);
   await Item.findByIdAndDelete(req.body.itemid).exec();
   res.redirect('/inventory/items');
 });
@@ -169,6 +201,8 @@ exports.item_update_get = asyncHandler(async (req, res, next) => {
 
 // Handle Item update on POST.
 exports.item_update_post = [
+  upload.single('itemPhoto'),
+
   body("name", "Name must be at least 3 characters.")
     .trim()
     .isLength({ min: 3 })
@@ -199,6 +233,8 @@ exports.item_update_post = [
     // Extract the validation errors from a request.
     const errors = validationResult(req);
 
+    const imageURL = req.file ? req.file.path.replace(/^public/, '') : '/images/no-image.png';
+
     // Create an Item object with escaped and trimmed data.
     const item = new Item({
       name: req.body.name,
@@ -207,6 +243,7 @@ exports.item_update_post = [
       description: req.body.description,
       price: req.body.price,
       numInStock: req.body.numInStock,
+      itemPhoto: imageURL,
       _id: req.params.id,
     });
 

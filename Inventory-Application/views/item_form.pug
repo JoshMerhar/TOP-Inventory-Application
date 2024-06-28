@@ -3,13 +3,13 @@ extends layout
 block content
   h1= title
 
-  form(method='POST')
+  form(method='POST' enctype='multipart/form-data')
     div.form-group
       label(for='name') Item Name:
-      input#title.form-control(type='text' placeholder='Name of item' name='name' required value=(undefined===item ? '' : item.name) )
+      input#itemName.form-control(type='text' placeholder='Name of item' name='name' required value=(undefined===item ? '' : item.name) )
     div.form-group
       label(for='brand') Brand:
-      select#author.form-control(name='brand' required)
+      select#brand.form-control(name='brand' required)
         option(value='') --Please select a brand--
         for brand in brands
           if item
@@ -21,7 +21,7 @@ block content
             option(value=brand._id) #{brand.name}
     div.form-group
       label(for='category') Category:
-      select#author.form-control(name='category' required)
+      select#category.form-control(name='category' required)
         option(value='') --Please select a category--
           for category in categories
             if item
@@ -33,13 +33,16 @@ block content
               option(value=category._id) #{category.name}
     div.form-group
       label(for='description') Description:
-      input#summary.form-control(placeholder='Item description' name='description' required value=(undefined===item ? '' : item.description) )
+      input#description.form-control(placeholder='Item description' name='description' required value=(undefined===item ? '' : item.description) )
     div.form-group
       label(for='price') Price:
-      input#isbn.form-control(type='number' placeholder='Price of item' name='price' step='0.01' required value=(undefined===item ? '' : item.price) )
+      input#price.form-control(type='number' placeholder='Price of item' name='price' step='0.01' required value=(undefined===item ? '' : item.price) )
     div.form-group 
       label(for='numInStock') Number in Stock: 
-      input#isbn.form-control(type='number' placeholder='Number in stock' name='numInStock' required value=(undefined===item ? '' : item.numInStock) )
+      input#numInStock.form-control(type='number' placeholder='Number in stock' name='numInStock' required value=(undefined===item ? '' : item.numInStock) )
+    div.form-group 
+      label(for='itemPhoto') Item Photo: 
+      input#itemPhoto.form-control(type='file' name='itemPhoto' value=(undefined===item ? '' : item.itemPhoto) )
     button.btn.btn-primary(type='submit') Submit
 
   if errors
