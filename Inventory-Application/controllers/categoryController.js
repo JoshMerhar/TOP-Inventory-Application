@@ -3,6 +3,12 @@ const Item = require("../models/item");
 const asyncHandler = require("express-async-handler");
 const { body, validationResult } = require("express-validator");
 
+const submitPassword = require('../submit-password');
+const checkPassword = (password) => {
+  if (password === submitPassword) return true;
+  return false;
+}
+
 // Display list of all Categories.
 exports.category_list = asyncHandler(async (req, res, next) => {
   const allCategories = await Category.find().sort({ name: 1 }).exec();
@@ -16,7 +22,7 @@ exports.category_list = asyncHandler(async (req, res, next) => {
 exports.category_detail = asyncHandler(async (req, res, next) => {
   const [category, itemsInCategory] = await Promise.all([
     Category.findById(req.params.id).sort({ name: 1 }).exec(),
-    Item.find({ category: req.params.id }, "name description brand").populate("brand").exec(),
+    Item.find({ category: req.params.id }, "name description brand itemPhoto").populate("brand").exec(),
   ]);
 
   if (category === null) {
@@ -52,37 +58,52 @@ exports.category_create_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
+    const validPassword = checkPassword(req.body.password);
 
-    // Create a category object with escaped and trimmed data.
-    const category = new Category({ 
-      name: req.body.name,
-      description: req.body.description,
-    });
+    if (validPassword) {
+      // Extract the validation errors from a request.
+      const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-      // There are errors. Render the form again with sanitized values/error messages.
+      // Create a category object with escaped and trimmed data.
+      const category = new Category({ 
+        name: req.body.name,
+        description: req.body.description,
+      });
+
+      if (!errors.isEmpty()) {
+        // There are errors. Render the form again with sanitized values/error messages.
+        res.render("category_form", {
+          title: "Create New Category",
+          category: category,
+          errors: errors.array(),
+        });
+        return;
+      } else {
+        // Data from form is valid.
+        // Check if category with same name already exists.
+        const categoryExists = await Category.findOne({ name: req.body.name })
+          .collation({ locale: "en", strength: 2 })
+          .exec();
+        if (categoryExists) {
+          // Category exists, redirect to its detail page.
+          res.redirect(categoryExists.url);
+        } else {
+          await category.save();
+          // New category saved. Redirect to category detail page.
+          res.redirect(category.url);
+        }
+      }
+    } else {
+      const category = new Category({ 
+        name: req.body.name,
+        description: req.body.description,
+       });
       res.render("category_form", {
         title: "Create New Category",
         category: category,
-        errors: errors.array(),
+        errors: [{ msg: 'Incorrect password' },],
       });
       return;
-    } else {
-      // Data from form is valid.
-      // Check if category with same name already exists.
-      const categoryExists = await Category.findOne({ name: req.body.name })
-        .collation({ locale: "en", strength: 2 })
-        .exec();
-      if (categoryExists) {
-        // Category exists, redirect to its detail page.
-        res.redirect(categoryExists.url);
-      } else {
-        await category.save();
-        // New category saved. Redirect to category detail page.
-        res.redirect(category.url);
-      }
     }
   }),
 ];
@@ -113,6 +134,8 @@ exports.category_delete_post = asyncHandler(async (req, res, next) => {
     Item.find({ category: req.params.id }).exec(),
   ]);
 
+  const validPassword = checkPassword(req.body.password);
+
   if (categoryItems.length > 0) {
     // Category has items. Render in same way as for GET route.
     res.render("category_delete", {
@@ -122,9 +145,19 @@ exports.category_delete_post = asyncHandler(async (req, res, next) => {
     });
     return;
   } else {
-    // Category has no items. Delete object and redirect to the list of categories.
-    await Category.findByIdAndDelete(req.body.categoryid);
-    res.redirect("/inventory/categories");
+    if (validPassword) {
+      // Category has no items. Delete object and redirect to the list of categories.
+      await Category.findByIdAndDelete(req.body.categoryid);
+      res.redirect("/inventory/categories");
+    } else {
+      res.render("category_delete", {
+        title: "Delete Category",
+        category: category,
+        category_items: categoryItems,
+        errors: [{msg: 'Incorrect password',},],
+      });
+      return;
+    }
   }
 });
 
@@ -151,38 +184,53 @@ exports.category_update_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
+    const validPassword = checkPassword(req.body.password);
 
-    // Create a category object with escaped and trimmed data.
-    const category = new Category({ 
-      name: req.body.name,
-      description: req.body.description,
-      _id: req.params.id,
-    });
+    if (validPassword) {
+      // Extract the validation errors from a request.
+      const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-      // There are errors. Render the form again with sanitized values/error messages.
+      // Create a category object with escaped and trimmed data.
+      const category = new Category({ 
+        name: req.body.name,
+        description: req.body.description,
+        _id: req.params.id,
+      });
+
+      if (!errors.isEmpty()) {
+        // There are errors. Render the form again with sanitized values/error messages.
+        res.render("category_form", {
+          title: "Update Category",
+          category: category,
+          errors: errors.array(),
+        });
+        return;
+      } else {
+        // Data from form is valid.
+        // Check if category with same name already exists.
+        const categoryExists = await Category.findOne({ name: req.body.name })
+          .collation({ locale: "en", strength: 2 })
+          .exec();
+        if (categoryExists) {
+          // Category exists, redirect to its detail page.
+          res.redirect(categoryExists.url);
+        } else {
+          const updatedCategory = await Category.findByIdAndUpdate(req.params.id, category, {});
+          // New category saved. Redirect to category detail page.
+          res.redirect(updatedCategory.url);
+        }
+      }
+    } else {
+      const category = new Category({ 
+        name: req.body.name,
+        description: req.body.description,
+       });
       res.render("category_form", {
-        title: "Create New Category",
+        title: "Update Category",
         category: category,
-        errors: errors.array(),
+        errors: [{ msg: 'Incorrect password' },],
       });
       return;
-    } else {
-      // Data from form is valid.
-      // Check if category with same name already exists.
-      const categoryExists = await Category.findOne({ name: req.body.name })
-        .collation({ locale: "en", strength: 2 })
-        .exec();
-      if (categoryExists) {
-        // Category exists, redirect to its detail page.
-        res.redirect(categoryExists.url);
-      } else {
-        const updatedCategory = await Category.findByIdAndUpdate(req.params.id, category, {});
-        // New category saved. Redirect to category detail page.
-        res.redirect(updatedCategory.url);
-      }
     }
   }),
 ];

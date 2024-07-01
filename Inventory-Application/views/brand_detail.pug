@@ -7,18 +7,20 @@ block content
   div(style='margin-left:20px;margin-top:20px')
 
     h2(style='font-size: 1.5rem;') Items
-    if brand_items.length
-      dl
+    div.brand-items-container
+      if brand_items.length
         each item in brand_items
-          dt
-            a(href=item.url) #{item.name}
-          dd #{item.description}
-          dd Category: 
-            a(href=item.category.url) #{item.category.name}
-    else
-      p This brand has no items.
-    hr
-    p
-      a(href=brand.url+'/delete') Delete Brand
+          div.brand-item
+            img.item-photo(src=(item.itemPhoto))
+            div.brand-item-info
+              a.item-info-name(href=item.url) #{item.name}
+              div #{item.description}
+              div Category: 
+                a(href=item.category.url) #{item.category.name}
+      else
+        p This brand has no items.
+      hr
     p
       a(href=brand.url+'/update') Update Brand
+    p
+      a(href=brand.url+'/delete') Delete Brand

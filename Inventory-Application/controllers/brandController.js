@@ -3,6 +3,12 @@ const Item = require("../models/item");
 const asyncHandler = require("express-async-handler");
 const { body, validationResult } = require("express-validator");
 
+const submitPassword = require('../submit-password');
+const checkPassword = (password) => {
+  if (password === submitPassword) return true;
+  return false;
+}
+
 // Display list of all Brands.
 exports.brand_list = asyncHandler(async (req, res, next) => {
   const allBrands = await Brand.find().sort({ name: 1 }).exec();
@@ -16,7 +22,7 @@ exports.brand_list = asyncHandler(async (req, res, next) => {
 exports.brand_detail = asyncHandler(async (req, res, next) => {
   const [brand, itemsInBrand] = await Promise.all([
     Brand.findById(req.params.id).exec(),
-    Item.find({ brand: req.params.id }, "name description category").populate("category").exec(),
+    Item.find({ brand: req.params.id }, "name description category itemPhoto").populate("category").exec(),
   ]);
   if (brand === null) {
     // No results.
@@ -47,34 +53,46 @@ exports.brand_create_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
+    const validPassword = checkPassword(req.body.password);
 
-    // Create a genre object with escaped and trimmed data.
-    const brand = new Brand({ name: req.body.name });
+    if (validPassword) {
+      // Extract the validation errors from a request.
+      const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-      // There are errors. Render the form again with sanitized values/error messages.
+      // Create a genre object with escaped and trimmed data.
+      const brand = new Brand({ name: req.body.name });
+
+      if (!errors.isEmpty()) {
+        // There are errors. Render the form again with sanitized values/error messages.
+        res.render("brand_form", {
+          title: "Create New Brand",
+          brand: brand,
+          errors: errors.array(),
+        });
+        return;
+      } else {
+        // Data from form is valid.
+        // Check if Brand with same name already exists.
+        const brandExists = await Brand.findOne({ name: req.body.name })
+          .collation({ locale: "en", strength: 2 })
+          .exec();
+        if (brandExists) {
+          // Brand exists, redirect to its detail page.
+          res.redirect(brandExists.url);
+        } else {
+          await brand.save();
+          // New brand saved. Redirect to brand detail page.
+          res.redirect(brand.url);
+        }
+      }
+    } else {
+      const brand = new Brand({ name: req.body.name });
       res.render("brand_form", {
         title: "Create New Brand",
         brand: brand,
-        errors: errors.array(),
+        errors: [{ msg: 'Incorrect password' },],
       });
       return;
-    } else {
-      // Data from form is valid.
-      // Check if Brand with same name already exists.
-      const brandExists = await Brand.findOne({ name: req.body.name })
-        .collation({ locale: "en", strength: 2 })
-        .exec();
-      if (brandExists) {
-        // Brand exists, redirect to its detail page.
-        res.redirect(brandExists.url);
-      } else {
-        await brand.save();
-        // New brand saved. Redirect to brand detail page.
-        res.redirect(brand.url);
-      }
     }
   }),
 ];
@@ -105,6 +123,8 @@ exports.brand_delete_post = asyncHandler(async (req, res, next) => {
     Item.find({ brand: req.params.id }).exec(),
   ]);
 
+  const validPassword = checkPassword(req.body.password);
+
   if (brandItems.length > 0) {
     // Brand has items. Render in same way as for GET route.
     res.render("brand_delete", {
@@ -114,9 +134,19 @@ exports.brand_delete_post = asyncHandler(async (req, res, next) => {
     });
     return;
   } else {
-    // Brand has no items. Delete object and redirect to the list of brands.
-    await Brand.findByIdAndDelete(req.body.brandid);
-    res.redirect("/inventory/brands");
+    if (validPassword) {
+      // Brand has no items. Delete object and redirect to the list of brands.
+      await Brand.findByIdAndDelete(req.body.brandid);
+      res.redirect("/inventory/brands");
+    } else {
+      res.render("brand_delete", {
+        title: "Delete Brand",
+        brand: brand,
+        brand_items: brandItems,
+        errors: [{msg: 'Incorrect password',},],
+      });
+      return;
+    }
   }
 });
 
@@ -139,36 +169,48 @@ exports.brand_update_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
+    const validPassword = checkPassword(req.body.password);
+    
+    if (validPassword) {
+      // Extract the validation errors from a request.
+      const errors = validationResult(req);
 
-    // Create a genre object with escaped and trimmed data.
-    const brand = new Brand({ 
-      name: req.body.name,
-      _id: req.params.id,
-    });
+      // Create a genre object with escaped and trimmed data.
+      const brand = new Brand({ 
+        name: req.body.name,
+        _id: req.params.id,
+      });
 
-    if (!errors.isEmpty()) {
-      // There are errors. Render the form again with sanitized values/error messages.
+      if (!errors.isEmpty()) {
+        // There are errors. Render the form again with sanitized values/error messages.
+        res.render("brand_form", {
+          title: "Update Brand",
+          brand: brand,
+          errors: errors.array(),
+        });
+        return;
+      } else {
+        // Data from form is valid.
+        // Check if Brand with same name already exists.
+        const brandExists = await Brand.findOne({ name: req.body.name })
+          .collation({ locale: "en", strength: 2 })
+          .exec();
+        if (brandExists) {
+          // Brand exists, redirect to its detail page.
+          res.redirect(brandExists.url);
+        } else {
+          const updatedBrand = await Brand.findByIdAndUpdate(req.params.id, brand, {});
+          res.redirect(updatedBrand.url);
+        }
+      }
+    } else {
+      const brand = new Brand({ name: req.body.name });
       res.render("brand_form", {
-        title: "Create New Brand",
+        title: "Update Brand",
         brand: brand,
-        errors: errors.array(),
+        errors: [{ msg: 'Incorrect password' },],
       });
       return;
-    } else {
-      // Data from form is valid.
-      // Check if Brand with same name already exists.
-      const brandExists = await Brand.findOne({ name: req.body.name })
-        .collation({ locale: "en", strength: 2 })
-        .exec();
-      if (brandExists) {
-        // Brand exists, redirect to its detail page.
-        res.redirect(brandExists.url);
-      } else {
-        const updatedBrand = await Brand.findByIdAndUpdate(req.params.id, brand, {});
-        res.redirect(updatedBrand.url);
-      }
     }
   }),
 ];

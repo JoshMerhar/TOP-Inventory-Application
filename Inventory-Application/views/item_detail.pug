@@ -2,26 +2,24 @@ extends layout
 
 block content
 
-  h1= title 
-
   div(style='margin-left:20px;margin-top:20px')
 
     if item
-      dl
-        dt
-          dd #{item.description}
-          dd Brand: 
+      h1 #{item.brand.name} #{item.name} 
+      div.item-detail
+        img.item-photo(src=(item.itemPhoto))
+        div.item-detail-info
+          div #{item.description}
+          div #[strong Brand]: 
             a(href=item.brand.url) #{item.brand.name}
-          dd Price: $#{item.price} 
-          dd Amount in Stock: #{item.numInStock}
-          dd 
-            img.item-photo(src=(item.itemPhoto))
-          dd Category: 
+          div #[strong Price]: $#{item.price} 
+          div #[strong Amount in Stock]: #{item.numInStock}
+          div #[strong Category]: 
             a(href=item.category.url) #{item.category.name}
     else
       p This item does not exist.
     hr
     p
-      a(href=item.url+'/delete') Delete Item
-    p
       a(href=item.url+'/update') Update Item
+    p
+      a(href=item.url+'/delete') Delete Item

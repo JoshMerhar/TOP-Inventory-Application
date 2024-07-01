@@ -18,6 +18,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+const submitPassword = require('../submit-password');
+const checkPassword = (password) => {
+  if (password === submitPassword) return true;
+  return false;
+}
+
 function deleteImage(filePath) {
   // Construct the full path to the image file
   const fullPath = 'public' + filePath;
@@ -69,7 +75,6 @@ exports.item_detail = asyncHandler(async (req, res, next) => {
   }
 
   res.render("item_detail", {
-    title: item.name,
     item: item,
   });
 });
@@ -118,43 +123,64 @@ exports.item_create_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
-
-    console.log(req.file);
     const imageURL = req.file ? req.file.path.replace(/^public/, '') : '/images/no-image.png';
+    const validPassword = checkPassword(req.body.password);
 
-    // Create an Item object with escaped and trimmed data.
-    const item = new Item({
-      name: req.body.name,
-      brand: req.body.brand,
-      category: req.body.category,
-      description: req.body.description,
-      price: req.body.price,
-      numInStock: req.body.numInStock,
-      itemPhoto: imageURL,
-    });
+    if (validPassword) {
+      // Extract the validation errors from a request.
+      const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-      // There are errors. Render form again with sanitized values/error messages.
+      // Create an Item object with escaped and trimmed data.
+      const item = new Item({
+        name: req.body.name,
+        brand: req.body.brand,
+        category: req.body.category,
+        description: req.body.description,
+        price: req.body.price,
+        numInStock: req.body.numInStock,
+        itemPhoto: imageURL,
+      });
 
-      // Get all brands and categories for form.
-      const [allBrands, allCategories] = await Promise.all([
-        Brand.find().sort({ name: 1 }).exec(),
-        Category.find().sort({ name: 1 }).exec(),
-      ]);
+      if (!errors.isEmpty()) {
+        // There are errors. Render form again with sanitized values/error messages.
 
+        // Get all brands and categories for form.
+        const [allBrands, allCategories] = await Promise.all([
+          Brand.find().sort({ name: 1 }).exec(),
+          Category.find().sort({ name: 1 }).exec(),
+        ]);
+
+        res.render("item_form", {
+          title: "Create New Item",
+          brands: allBrands,
+          categories: allCategories,
+          item: item,
+          errors: errors.array(),
+        });
+      } else {
+        // Data from form is valid. Save item.
+        await item.save();
+        res.redirect(item.url);
+      }
+    } else {
+      const item = new Item({ 
+        name: req.body.name,
+        brand: req.body.brand,
+        category: req.body.category,
+        description: req.body.description,
+        price: req.body.price,
+        numInStock: req.body.numInStock,
+        itemPhoto: imageURL,
+       });
+      
       res.render("item_form", {
         title: "Create New Item",
         brands: allBrands,
         categories: allCategories,
         item: item,
-        errors: errors.array(),
+        errors: [{ msg: 'Incorrect password' },],
       });
-    } else {
-      // Data from form is valid. Save item.
-      await item.save();
-      res.redirect(item.url);
+      return;
     }
   }),
 ];
@@ -172,9 +198,19 @@ exports.item_delete_get = asyncHandler(async (req, res, next) => {
 // Handle Item delete on POST.
 exports.item_delete_post = asyncHandler(async (req, res, next) => {
   const item = await Item.findById(req.body.itemid).exec();
-  deleteImage(item.itemPhoto);
-  await Item.findByIdAndDelete(req.body.itemid).exec();
-  res.redirect('/inventory/items');
+  const validPassword = checkPassword(req.body.password);
+  if (validPassword) {
+    deleteImage(item.itemPhoto);
+    await Item.findByIdAndDelete(req.body.itemid).exec();
+    res.redirect('/inventory/items');
+  } else {
+    res.render("item_delete", {
+      title: "Delete Item",
+      item: item,
+      errors: [{msg: 'Incorrect password',},]
+    });
+    return;
+  }
 });
 
 // Display Item update form on GET.
@@ -230,43 +266,70 @@ exports.item_update_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    // Extract the validation errors from a request.
-    const errors = validationResult(req);
+    const imageURL = req.file ? req.file.path.replace(/^public/, '') : undefined;
+    const validPassword = checkPassword(req.body.password);
 
-    const imageURL = req.file ? req.file.path.replace(/^public/, '') : '/images/no-image.png';
+    if (validPassword) {
+      // Extract the validation errors from a request.
+      const errors = validationResult(req);
 
-    // Create an Item object with escaped and trimmed data.
-    const item = new Item({
-      name: req.body.name,
-      brand: req.body.brand,
-      category: req.body.category,
-      description: req.body.description,
-      price: req.body.price,
-      numInStock: req.body.numInStock,
-      itemPhoto: imageURL,
-      _id: req.params.id,
-    });
+      // Create an Item object with escaped and trimmed data.
+      const item = new Item({
+        name: req.body.name,
+        brand: req.body.brand,
+        category: req.body.category,
+        description: req.body.description,
+        price: req.body.price,
+        numInStock: req.body.numInStock,
+        itemPhoto: imageURL,
+        _id: req.params.id,
+      });
 
-    if (!errors.isEmpty()) {
-      // There are errors. Render form again with sanitized values/error messages.
+      if (!errors.isEmpty()) {
+        // There are errors. Render form again with sanitized values/error messages.
 
-      // Get all brands and categories for form.
+        // Get all brands and categories for form.
+        const [allBrands, allCategories] = await Promise.all([
+          Brand.find().sort({ name: 1 }).exec(),
+          Category.find().sort({ name: 1 }).exec(),
+        ]);
+
+        res.render("item_form", {
+          title: "Update Item",
+          brands: allBrands,
+          categories: allCategories,
+          item: item,
+          errors: errors.array(),
+        });
+      } else {
+        // Data from form is valid. Save updated item.
+        const updatedItem = await Item.findByIdAndUpdate(req.params.id, item, {});
+        res.redirect(updatedItem.url);
+      }
+    } else {
       const [allBrands, allCategories] = await Promise.all([
         Brand.find().sort({ name: 1 }).exec(),
         Category.find().sort({ name: 1 }).exec(),
       ]);
 
+      const item = new Item({ 
+        name: req.body.name,
+        brand: req.body.brand,
+        category: req.body.category,
+        description: req.body.description,
+        price: req.body.price,
+        numInStock: req.body.numInStock,
+        itemPhoto: imageURL,
+       });
+
       res.render("item_form", {
-        title: "Create New Item",
+        title: "Update Item",
         brands: allBrands,
         categories: allCategories,
         item: item,
-        errors: errors.array(),
+        errors: [{ msg: 'Incorrect password' },],
       });
-    } else {
-      // Data from form is valid. Save updated item.
-      const updatedItem = await Item.findByIdAndUpdate(req.params.id, item, {});
-      res.redirect(updatedItem.url);
+      return;
     }
   }),
 ];

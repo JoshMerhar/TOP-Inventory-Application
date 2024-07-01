@@ -11,7 +11,9 @@ block content
     div.form-group
       label(for='description') Description:
       input#summary.form-control(placeholder='Description' name='description' required value=(undefined===category ? '' : category.description) )
-    
+    div.form-group 
+      label(for='password') Password: 
+      input#password.form-control(type='password' placeholder='Enter Password' name='password' required)
     button.btn.btn-primary(type='submit') Submit
 
   if errors

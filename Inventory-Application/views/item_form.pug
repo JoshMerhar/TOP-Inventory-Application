@@ -40,10 +40,14 @@ block content
     div.form-group 
       label(for='numInStock') Number in Stock: 
       input#numInStock.form-control(type='number' placeholder='Number in stock' name='numInStock' required value=(undefined===item ? '' : item.numInStock) )
-    div.form-group 
+    div.form-group
       label(for='itemPhoto') Item Photo: 
-      input#itemPhoto.form-control(type='file' name='itemPhoto' value=(undefined===item ? '' : item.itemPhoto) )
+      input#itemPhoto.form-control(type='file' name='itemPhoto')
+    div.form-group 
+      label(for='password') Password: 
+      input#password.form-control(type='password' placeholder='Enter Password' name='password' required)
     button.btn.btn-primary(type='submit') Submit
+    a(style='padding-left: 20px;' href=(undefined!==item ? item.url : '/inventory/items') ) Cancel
 
   if errors
     ul

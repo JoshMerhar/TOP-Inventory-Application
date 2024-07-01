@@ -16,8 +16,75 @@ ul {
   font-weight: bold;
 }
 
+.items-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.item-card {
+  display: flex;
+  flex-direction: column;
+  border: 3px solid black;
+  border-radius: 5px;
+  padding-bottom: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background-color: whitesmoke;
+  transition: .2s;
+}
+
+.item-card:hover {
+  transform: scale(1.03);
+  box-shadow: black 5px 4px 4px;
+}
+
 .item-photo {
   width: 300px;
-  height: 100%;
+  max-height: 400px;
   object-fit: contain;
+  background-color: white;
+}
+
+.item-info {
+  height: 4rem;
+  padding: 0 1.5rem 0 1.5rem;
+}
+
+.brand-item,
+.category-item,
+.item-detail {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.brand-item,
+.category-item {
+  padding: 1rem 0 1rem 0;
+  border-bottom: 3px darkslategray dotted;
+}
+
+.brand-item-info,
+.category-item-info,
+.item-detail-info {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  gap: .5rem;
+}
+
+.brand-items-container,
+.category-items-container {
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+  gap: 20px;
+  width: 700px;
+}
+
+.item-info-name {
+  font-size: 18px;
+  font-weight: bold;
 }

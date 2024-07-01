@@ -21,5 +21,12 @@ block content
     form(method='POST')
       div.form-group
         input#genreid.form-control(type='hidden', name='brandid', value=brand._id )
-
+      div.form-group 
+        label(for='password') Password: 
+        input#password.form-control(type='password' placeholder='Enter Password' name='password' required)
       button.btn.btn-primary(type='submit') Delete
+
+  if errors
+    ul
+      for error in errors
+        li(style='color: red;')!= error.msg

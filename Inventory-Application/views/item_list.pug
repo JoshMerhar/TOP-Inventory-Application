@@ -3,15 +3,16 @@ extends layout
 block content 
   h1= title 
 
-  if item_list.length
-    ul 
+  div.items-container
+    if item_list.length
       each item in item_list
-        li 
-          a(href=item.url) #{item.name} 
-          span From: 
-          a(href=item.brand.url) #{item.brand.name} 
-          div Price: $#{item.price}
-          hr
+        div.item-card 
+          img.item-photo(src=(item.itemPhoto))
+          div.item-info
+            a(href=item.url) #{item.name} 
+            span #[strong By]: 
+            a(href=item.brand.url) #{item.brand.name} 
+            div #[strong Price]: $#{item.price}
 
-  else 
-    p There are no items.
+    else 
+      p There are no items.
